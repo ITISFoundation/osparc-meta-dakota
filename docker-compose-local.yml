@@ -1,0 +1,16 @@
+version: '3.7'
+services:
+  osparc-dakota:
+    image: simcore/services/dynamic/osparc-dakota:0.0.1
+    ports:
+      - "8888:8888"
+    environment:
+      - DY_SIDECAR_PATH_INPUTS=/tmp/inputs
+      - DY_SIDECAR_PATH_OUTPUTS=/tmp/outputs
+      - DY_BOOT_OPTION_BOOT_MODE=0
+      - DY_SIDECAR_PATH=/home/osparcuser/work/workspace
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - ${PWD}/validation-tmp/workspace:/home/osparcuser/work/workspace
+      - ${PWD}/validation-tmp/inputs:/tmp/inputs
+      - ${PWD}/validation-tmp/outputs:/tmp/outputs
