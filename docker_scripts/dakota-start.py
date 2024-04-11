@@ -1,22 +1,27 @@
-import os
-import sys
 import contextlib
-import pathlib as pl
-import uuid
-import time
 import logging
+import os
+import pathlib as pl
 import shutil
+import sys
+import time
+import uuid
 
-import numpy as np
 import dakota.environment as dakenv
-
+import numpy as np
 from osparc_filecomms import handshakers
 
-logging.basicConfig(level=logging.INFO, format="[%(filename)s:%(lineno)d] %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="[%(filename)s:%(lineno)d] %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 sys.path.append(str((pl.Path(__file__) / "tools").resolve().parent))
-print("Added to python search python: " f"{str(pl.Path(__file__).resolve().parent)}")
+print(
+    "Added to python search python: "
+    f"{str(pl.Path(__file__).resolve().parent)}"
+)
+
 import tools.maps  # NOQA
 
 
@@ -71,6 +76,7 @@ class DakotaService:
             self.map_reply_file_path.resolve(),
             self.map_caller_file_path.resolve(),
         )
+
         self.caller_uuid = self.caller_handshaker.shake()
 
         while not self.dakota_conf_path.exists():
@@ -81,17 +87,27 @@ class DakotaService:
 
     def model_callback(self, dak_inputs):
         # print(f"evaluating: {dak_inputs}")
+        #
         param_sets = [
             {
                 label: value
-                for label, value in zip(dak_input["cv_labels"], dak_input["cv"])
+                for label, value in zip(
+                    dak_input["cv_labels"], dak_input["cv"]
+                )
             }
             for dak_input in dak_inputs
         ]
-        all_response_labels = [dak_input["function_labels"] for dak_input in dak_inputs]
+        all_response_labels = [
+            dak_input["function_labels"] for dak_input in dak_inputs
+        ]
         obj_sets = self.map_object.evaluate(param_sets)
         dak_outputs = [
-            {"fns": [obj_set[response_label] for response_label in response_labels]}
+            {
+                "fns": [
+                    obj_set[response_label]
+                    for response_label in response_labels
+                ]
+            }
             for obj_set, response_labels in zip(obj_sets, all_response_labels)
         ]
         # print(f"output: {dak_outputs}")

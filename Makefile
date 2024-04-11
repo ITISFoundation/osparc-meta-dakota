@@ -2,6 +2,7 @@
 
 SHELL = /bin/sh
 .DEFAULT_GOAL := help
+MAKEFLAGS += -j3
 
 export DOCKER_IMAGE_NAME ?= osparc-dakota
 export DOCKER_IMAGE_TAG ?= 0.0.1
@@ -34,11 +35,24 @@ clean:
 build: clean compose-spec	## build docker image
 	docker-compose build
 
-.PHONY: run-local
-run-local:	## runs image with local configuration
+clean-validation:
 	sudo rm -rf validation-tmp
 	cp -r validation validation-tmp
+	chmod -R 770 validation-tmp
+
+run-compose-local: clean-validation
 	docker-compose --file docker-compose-local.yml up
+
+run-mock-mapservice: clean-validation
+	pip install osparc-filecomms
+	MOCK_MAP_INPUT_PATH=validation-tmp/outputs/output_1 MOCK_MAP_OUTPUT_PATH=validation-tmp/inputs/input_1 python validation-client/mock_mapservice.py
+
+run-validation-client: clean-validation
+	pip install osparc-filecomms
+	VALIDATION_CLIENT_INPUT_PATH=validation-tmp/outputs/output_0 VALIDATION_CLIENT_OUTPUT_PATH=validation-tmp/inputs/input_0 python validation-client/client.py
+
+.PHONY: run-local
+run-local: clean-validation run-compose-local run-mock-mapservice run-validation-client
 
 .PHONY: publish-local
 publish-local: ## push to local throw away registry to test integration

@@ -1,0 +1,53 @@
+# Dakota configuration file
+
+environment
+    tabular_data
+        tabular_data_file
+            "opt.dat"
+
+method                                                                                                                                                          
+    id_method = 'SAMPLING'                                                                                                                                      
+    model_pointer = 'TRUE_MODEL'
+    sample_type
+        lhs                                                                                                                                
+    sampling                                                                                                                                                    
+        samples = 2                                                                                                                                             
+    seed = 1234
+
+model                                                                                                                                                           
+    id_model = 'TRUE_MODEL'                                                                                                                                     
+    single                                                                                                                                                      
+        interface_pointer = 'INTERFACE'                                                                                                                                
+        variables_pointer = 'VARIABLES'                                                                                                                                
+        responses_pointer = 'RESPONSES'
+
+variables
+    id_variables = 'VARIABLES'
+    continuous_design
+        2
+        lower_bounds     
+            0.05     
+            0.01
+        upper_bounds      
+            0.125      
+            0.075
+        descriptors       
+            'x0'     
+            'x1'
+
+interface
+    id_interface = 'INTERFACE'
+    batch
+    python
+    analysis_driver
+        "model"
+
+responses
+    id_responses = 'RESPONSES'
+    objective_functions
+        2
+        descriptors
+            'x0' 
+            'x1' 
+    no_gradients
+    no_hessians

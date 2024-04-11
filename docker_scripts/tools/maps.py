@@ -1,8 +1,8 @@
-import time
 import json
-import uuid
 import logging
 import pathlib as pl
+import time
+import uuid
 
 from osparc_filecomms import handshakers
 
@@ -38,8 +38,8 @@ class oSparcFileMap:
             self.caller_file_path.parent,
             is_initiator=False,
             verbose_level=logging.DEBUG,
-            polling_interval=.1,
-            print_polling_interval=100
+            polling_interval=0.1,
+            print_polling_interval=100,
         )
         self.map_uuid = self.handshaker.shake()
 
