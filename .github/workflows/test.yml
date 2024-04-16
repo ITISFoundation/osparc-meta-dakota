@@ -27,5 +27,8 @@ jobs:
               uses: actions/setup-python@v5
               with:
                   python-version: ${{ matrix.python-version }}
+            - name: Make build
+              run: make build
             - name: Make run-local
               run: make run-local
+          

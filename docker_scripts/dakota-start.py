@@ -62,7 +62,8 @@ class DakotaService:
             is_initiator=True,
         )
 
-        self.clean_output(self.output0_dir_path)
+        if self.output0_dir_path.exists():
+            self.clean_output(self.output0_dir_path)
 
     def clean_output(self, dir_path):
         for item in dir_path.iterdir():
