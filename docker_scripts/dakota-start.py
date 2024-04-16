@@ -1,9 +1,12 @@
 import contextlib
+import http.server
 import logging
 import os
 import pathlib as pl
 import shutil
+import socketserver
 import sys
+import threading
 import time
 import uuid
 
@@ -29,11 +32,31 @@ NOISE_MUS = [0.0, 0.0]
 NOISE_SIGMAS = [5.0, 10.0]
 
 POLLING_TIME = 0.1
+HTTP_PORT = 8888
 
 
 def main():
     dakota_service = DakotaService()
-    dakota_service.start()
+
+    http_dir_path = pl.Path(__file__).parent / "http"
+
+    class HTTPHandler(http.server.SimpleHTTPRequestHandler):
+        def __init__(self, *args, **kwargs):
+            super().__init__(
+                *args, **kwargs, directory=http_dir_path.resolve()
+            )
+
+    try:
+        logger.info(
+            f"Starting http server at port {HTTP_PORT} and serving path {http_dir_path}"
+        )
+        with socketserver.TCPServer(("", HTTP_PORT), HTTPHandler) as httpd:
+            httpd_thread = threading.Thread(target=httpd.serve_forever)
+            httpd_thread.start()
+            dakota_service.start()
+            httpd.shutdown()
+    except Exception as err:  # pylint: disable=broad-except
+        logger.error(f"{err} . Stopping %s", exc_info=True)
 
 
 class DakotaService:
@@ -87,8 +110,6 @@ class DakotaService:
         self.start_dakota(dakota_conf, self.output0_dir_path)
 
     def model_callback(self, dak_inputs):
-        # print(f"evaluating: {dak_inputs}")
-        #
         param_sets = [
             {
                 label: value
@@ -111,7 +132,6 @@ class DakotaService:
             }
             for obj_set, response_labels in zip(obj_sets, all_response_labels)
         ]
-        # print(f"output: {dak_outputs}")
         return dak_outputs
 
     def model(self, input, mus=NOISE_MUS, sigmas=NOISE_SIGMAS):
