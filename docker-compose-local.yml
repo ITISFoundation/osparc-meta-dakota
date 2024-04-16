@@ -1,7 +1,7 @@
 version: '3.7'
 services:
   osparc-dakota:
-    image: simcore/services/dynamic/osparc-dakota:0.0.1
+    image: simcore/services/dynamic/osparc-dakota:0.0.2
     ports:
       - "8888:8888"
     environment:

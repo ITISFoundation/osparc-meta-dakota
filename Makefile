@@ -5,7 +5,7 @@ SHELL = /bin/sh
 MAKEFLAGS += -j3
 
 export DOCKER_IMAGE_NAME ?= osparc-dakota
-export DOCKER_IMAGE_TAG ?= 0.0.1
+export DOCKER_IMAGE_TAG ?= 0.0.2
 
 define _bumpversion
 	# upgrades as $(subst $(1),,$@) version, commits and tags
