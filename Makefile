@@ -48,7 +48,7 @@ run-mock-mapservice: clean-validation
 	MOCK_MAP_INPUT_PATH=validation-tmp/outputs/output_1 MOCK_MAP_OUTPUT_PATH=validation-tmp/inputs/input_1 python validation-client/mock_mapservice.py
 
 run-validation-client: clean-validation
-	pip install osparc-filecomms
+	pip install osparc-filecomms pandas
 	VALIDATION_CLIENT_INPUT_PATH=validation-tmp/outputs/output_0 VALIDATION_CLIENT_OUTPUT_PATH=validation-tmp/inputs/input_0 python validation-client/client.py
 
 .PHONY: run-local
