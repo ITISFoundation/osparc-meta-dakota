@@ -1,6 +1,6 @@
 name: DakotaService
 description: "DakotaServiceService"
-key: simcore/services/dynamic/osparc-dakota
+key: simcore/services/dynamic/osparc-meta-dakota
 version: 0.0.2
 integration-version: 0.0.2
 type: dynamic

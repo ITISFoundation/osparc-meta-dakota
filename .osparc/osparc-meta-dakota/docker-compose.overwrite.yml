@@ -1,4 +1,4 @@
 services:
-  osparc-dakota:
+  osparc-meta-dakota:
     build:
       dockerfile: Dockerfile

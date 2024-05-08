@@ -4,8 +4,12 @@ SHELL = /bin/sh
 .DEFAULT_GOAL := help
 MAKEFLAGS += -j3
 
-export DOCKER_IMAGE_NAME ?= osparc-dakota
+export DOCKER_IMAGE_NAME ?= osparc-meta-dakota
 export DOCKER_IMAGE_TAG ?= 0.0.2
+
+export MASTER_AWS_REGISTRY ?= registry.osparc-master-zmt.click
+export MASTER_REGISTRY ?= registry.osparc-master.speag.com
+export LOCAL_REGISTRY ?= registry:5000
 
 define _bumpversion
 	# upgrades as $(subst $(1),,$@) version, commits and tags
@@ -56,9 +60,21 @@ run-local: clean-validation run-compose-local run-mock-mapservice run-validation
 
 .PHONY: publish-local
 publish-local: ## push to local throw away registry to test integration
-	docker tag simcore/services/dynamic/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} registry:5000/simcore/services/dynamic/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
-	docker push registry:5000/simcore/services/dynamic/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
-	@curl registry:5000/v2/_catalog | jq
+	docker tag simcore/services/dynamic/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} $(LOCAL_REGISTRY)/simcore/services/dynamic/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
+	docker push $(LOCAL_REGISTRY)/simcore/services/dynamic/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
+	@curl $(LOCAL_REGISTRY)/v2/_catalog | jq
+
+publish-master: ## push to local throw away registry to test integration
+	docker tag simcore/services/dynamic/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} $(MASTER_REGISTRY)/simcore/services/dynamic/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
+	docker push $(MASTER_REGISTRY)/simcore/services/dynamic/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
+	@curl $(MASTER_REGISTRY)/v2/_catalog | jq
+
+.PHONY: publish-master-aws
+publish-master-aws: ## push to local throw away registry to test integration
+	docker tag simcore/services/dynamic/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} $(MASTER_AWS_REGISTRY)/simcore/services/dynamic/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
+	docker push $(MASTER_AWS_REGISTRY)/simcore/services/dynamic/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
+	@curl $(MASTER_AWS_REGISTRY)/v2/_catalog | jq
+
 
 .PHONY: help
 help: ## this colorful help
