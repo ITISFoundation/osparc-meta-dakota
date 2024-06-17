@@ -37,7 +37,7 @@ clean:
 
 .PHONY: build
 build: clean compose-spec	## build docker image
-	docker-compose build
+	docker compose build
 
 clean-validation:
 	sudo rm -rf validation-tmp
@@ -45,7 +45,8 @@ clean-validation:
 	chmod -R 770 validation-tmp
 
 run-compose-local: clean-validation
-	docker-compose --file docker-compose-local.yml up
+	docker compose down
+	docker compose --file docker-compose-local.yml up
 
 run-mock-mapservice: clean-validation
 	pip install osparc-filecomms

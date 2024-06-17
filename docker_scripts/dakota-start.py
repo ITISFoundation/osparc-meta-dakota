@@ -112,10 +112,18 @@ class DakotaService:
     def model_callback(self, dak_inputs):
         param_sets = [
             {
-                label: value
-                for label, value in zip(
-                    dak_input["cv_labels"], dak_input["cv"]
-                )
+                **{
+                    label: value
+                    for label, value in zip(
+                        dak_input["cv_labels"], dak_input["cv"]
+                    )
+                },
+                **{
+                    label: value
+                    for label, value in zip(
+                        dak_input["div_labels"], dak_input["div"]
+                    )
+                },
             }
             for dak_input in dak_inputs
         ]
@@ -133,14 +141,6 @@ class DakotaService:
             for obj_set, response_labels in zip(obj_sets, all_response_labels)
         ]
         return dak_outputs
-
-    def model(self, input, mus=NOISE_MUS, sigmas=NOISE_SIGMAS):
-        x0, x1, x2 = input
-        noise0 = np.random.normal(mus[0], sigmas[0])
-        noise1 = np.random.normal(mus[1], sigmas[1])
-        y0 = x0 + x1 + noise0
-        y1 = x2 + noise1
-        return y0, y1
 
     def start_dakota(self, dakota_conf, output_dir):
         with working_directory(output_dir):
