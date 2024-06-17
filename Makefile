@@ -5,7 +5,7 @@ SHELL = /bin/sh
 MAKEFLAGS += -j3
 
 export DOCKER_IMAGE_NAME ?= osparc-meta-dakota
-export DOCKER_IMAGE_TAG ?= 0.0.3
+export DOCKER_IMAGE_TAG ?= 0.0.4
 
 export MASTER_AWS_REGISTRY ?= registry.osparc-master-zmt.click
 export MASTER_REGISTRY ?= registry.osparc-master.speag.com
@@ -37,7 +37,7 @@ clean:
 
 .PHONY: build
 build: clean compose-spec	## build docker image
-	docker-compose build
+	docker compose build
 
 clean-validation:
 	sudo rm -rf validation-tmp
@@ -45,7 +45,8 @@ clean-validation:
 	chmod -R 770 validation-tmp
 
 run-compose-local: clean-validation
-	docker-compose --file docker-compose-local.yml up
+	docker compose down
+	docker compose --file docker-compose-local.yml up
 
 run-mock-mapservice: clean-validation
 	pip install osparc-filecomms

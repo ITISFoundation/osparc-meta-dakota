@@ -34,6 +34,14 @@ variables
         descriptors       
             'x0'     
             'x1'
+    discrete_design_set
+        integer 2
+        elements_per_variable 2 2
+        elements
+            0 1 0 1
+        descriptors       
+            'd0'     
+            'd1'     
 
 interface
     id_interface = 'INTERFACE'
