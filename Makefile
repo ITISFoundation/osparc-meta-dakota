@@ -5,7 +5,7 @@ SHELL = /bin/sh
 MAKEFLAGS += -j3
 
 export DOCKER_IMAGE_NAME ?= osparc-meta-dakota
-export DOCKER_IMAGE_TAG ?= 0.0.5
+export DOCKER_IMAGE_TAG ?= 0.0.6
 
 export MASTER_AWS_REGISTRY ?= registry.osparc-master-zmt.click
 export MASTER_REGISTRY ?= registry.osparc-master.speag.com
