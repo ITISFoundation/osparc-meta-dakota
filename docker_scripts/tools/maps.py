@@ -87,7 +87,8 @@ class oSparcFileMap:
         return objs_sets
 
     def evaluate(self, params_set):
-        logger.info(f"Evaluating: {params_set}")
+        logger.info(f"Evaluating {len(params_set)} parameter sets")
+        logger.debug(f"Evaluating: {params_set}")
 
         tasks_uuid = str(uuid.uuid4())
         map_input_payload = self.create_map_input_payload(
@@ -107,6 +108,7 @@ class oSparcFileMap:
                 ]
                 if payload_uuid == DISABLE_UUID_CHECK_STRING:
                     break
+
                 if waiter % 10 == 0:
                     logger.info(
                         f"Waiting for tasks uuid to match: payload:{payload_uuid} tasks:{tasks_uuid}"
@@ -123,7 +125,8 @@ class oSparcFileMap:
 
         objs_set = self.read_map_output_payload(map_output_payload)
 
-        logger.info(f"Evaluation results: {objs_set}")
+        logger.info(f"Received {len(objs_set)} objective sets")
+        logger.debug(f"Evaluation results: {objs_set}")
 
         return objs_set
 
