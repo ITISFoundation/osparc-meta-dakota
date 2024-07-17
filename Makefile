@@ -33,7 +33,7 @@ compose-spec: ## runs ooil to assemble the docker-compose.yml file
 		itisfoundation/ci-service-integration-library:v1.0.4 \
 		sh -c "cd /${DOCKER_IMAGE_NAME} && ooil compose"
 
-clean:
+clean: clean-validation
 	rm -rf docker-compose.yml
 
 .PHONY: build
@@ -41,42 +41,46 @@ build: clean compose-spec	## build docker image
 	docker compose build
 
 clean-validation:
-	sudo rm -rf validation-tmp
+	rm -rf validation-tmp
 	cp -r validation validation-tmp
 	chmod -R 770 validation-tmp
 
-run-compose-local: clean-validation
+run-compose-local:
 	docker compose down
 	docker compose --file docker-compose-local.yml up
 
-run-mock-mapservice: clean-validation
+run-mock-mapservice:
 	pip install osparc-filecomms
 	MOCK_MAP_INPUT_PATH=validation-tmp/outputs/output_1 MOCK_MAP_OUTPUT_PATH=validation-tmp/inputs/input_1 python validation-client/mock_mapservice.py
 
-run-validation-client: clean-validation
+run-validation-client:
 	pip install osparc-filecomms pandas
 	VALIDATION_CLIENT_INPUT_PATH=validation-tmp/outputs/output_0 VALIDATION_CLIENT_OUTPUT_PATH=validation-tmp/inputs/input_0 python validation-client/client.py
 
-.PHONY: run-local
-run-local: clean-validation run-compose-local run-mock-mapservice run-validation-client
+.PHONY: run-local-parallel
+run-local-parallel: run-compose-local run-mock-mapservice run-validation-client
 
+.PHONY: run-local
+run-local: build
+	$(MAKE) run-local-parallel
+	
 .PHONY: publish-local
-publish-local: ## push to local throw away registry to test integration
+publish-local: run-local ## push to local throw away registry to test integration
 	docker tag simcore/services/dynamic/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} $(LOCAL_REGISTRY)/simcore/services/dynamic/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
 	docker push $(LOCAL_REGISTRY)/simcore/services/dynamic/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
 	@curl $(LOCAL_REGISTRY)/v2/_catalog | jq
 
-publish-master: ## push to local throw away registry to test integration
+publish-master: run-local ## push to local throw away registry to test integration
 	docker tag simcore/services/dynamic/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} $(MASTER_REGISTRY)/simcore/services/dynamic/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
 	docker push $(MASTER_REGISTRY)/simcore/services/dynamic/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
 	@curl $(MASTER_REGISTRY)/v2/_catalog | jq
 
-publish-staging: ## push to local throw away registry to test integration
+publish-staging: run-local ## push to local throw away registry to test integration
 	docker tag simcore/services/dynamic/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} $(STAGING_REGISTRY)/simcore/services/dynamic/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
 	docker push $(STAGING_REGISTRY)/simcore/services/dynamic/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
 
 .PHONY: publish-master-aws
-publish-master-aws: ## push to local throw away registry to test integration
+publish-master-aws: run-local ## push to local throw away registry to test integration
 	docker tag simcore/services/dynamic/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} $(MASTER_AWS_REGISTRY)/simcore/services/dynamic/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
 	docker push $(MASTER_AWS_REGISTRY)/simcore/services/dynamic/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
 	@curl $(MASTER_AWS_REGISTRY)/v2/_catalog | jq
