@@ -11,7 +11,6 @@ import time
 import uuid
 
 import dakota.environment as dakenv
-import numpy as np
 from osparc_filecomms import handshakers
 
 logging.basicConfig(
@@ -106,6 +105,13 @@ class DakotaService:
         while not self.dakota_conf_path.exists():
             time.sleep(POLLING_TIME)
         dakota_conf = self.dakota_conf_path.read_text()
+
+        shutil.copytree(
+            self.input0_dir_path,
+            self.output0_dir_path,
+            dirs_exist_ok=True,
+            ignore=shutil.ignore_patterns("handshake.json"),
+        )
 
         self.start_dakota(dakota_conf, self.output0_dir_path)
 
