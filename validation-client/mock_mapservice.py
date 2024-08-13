@@ -25,8 +25,6 @@ def main():
     input_tasks_path = map_input_path / "input_tasks.json"
     output_tasks_path = map_output_path / "output_tasks.json"
 
-    this_dir = pl.Path(__file__).parent
-
     handshaker = handshakers.FileHandshaker(
         map_uuid,
         map_input_path,
@@ -46,17 +44,21 @@ def main():
 
     assert input_tasks["map_uuid"] == map_uuid
 
-    logger.info(f"Map received tasks: {input_tasks}")
+    if input_tasks["command"] == "run":
+        logger.info(f"Map received tasks: {input_tasks}")
+        output_tasks = input_tasks
 
-    output_tasks = input_tasks
+        for output_task in output_tasks["tasks"]:
+            output_task["status"] = "SUCCESS"
+            output_task["output"]["OutputFile1"]["value"] = output_task[
+                "input"
+            ]["InputFile1"]["value"]
 
-    for output_task in output_tasks["tasks"]:
-        output_task["status"] = "SUCCESS"
-        output_task["output"]["OutputFile1"]["value"] = output_task["input"][
-            "InputFile1"
-        ]["value"]
-
-    output_tasks_path.write_text(json.dumps(output_tasks))
+        output_tasks_path.write_text(json.dumps(output_tasks))
+    elif input_tasks["command"] == "stop":
+        logger.info("Map received stop command")
+    else:
+        raise Exception(f"Map received unknown command: {input_tasks}")
     # stop_command = {
     #     "caller_uuid": client_uuid,
     #     "map_uuid": map_uuid,

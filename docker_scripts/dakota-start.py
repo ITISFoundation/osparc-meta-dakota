@@ -106,11 +106,15 @@ class DakotaService:
             time.sleep(POLLING_TIME)
         dakota_conf = self.dakota_conf_path.read_text()
 
+        clear_directory(
+            self.output0_dir_path,
+        )
+
         shutil.copytree(
             self.input0_dir_path,
             self.output0_dir_path,
-            dirs_exist_ok=True,
             ignore=shutil.ignore_patterns("handshake.json"),
+            dirs_exist_ok=True,
         )
 
         self.start_dakota(dakota_conf, self.output0_dir_path)
@@ -149,9 +153,16 @@ class DakotaService:
         return dak_outputs
 
     def start_dakota(self, dakota_conf, output_dir):
+        dakota_restart_path = output_dir / "dakota.rst"
         with working_directory(output_dir):
             callbacks = {"model": self.model_callback}
-            study = dakenv.study(callbacks=callbacks, input_string=dakota_conf)
+            study = dakenv.study(
+                callbacks=callbacks,
+                input_string=dakota_conf,
+                read_restart=str(dakota_restart_path)
+                if dakota_restart_path.exists()
+                else "",
+            )
             study.execute()
 
 
@@ -164,6 +175,15 @@ def working_directory(path):
         yield
     finally:
         os.chdir(prev_cwd)
+
+
+def clear_directory(path):
+    for item in os.listdir(path):
+        item_path = os.path.join(path, item)
+        if os.path.isfile(item_path) or os.path.islink(item_path):
+            os.unlink(item_path)
+        elif os.path.isdir(item_path):
+            shutil.rmtree(item_path)
 
 
 if __name__ == "__main__":
