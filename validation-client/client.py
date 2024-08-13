@@ -3,6 +3,8 @@
 import logging
 import os
 import pathlib as pl
+import shutil
+import string
 import time
 import uuid
 
@@ -22,6 +24,7 @@ def main():
     client_uuid = str(uuid.uuid4())
     client_input_path = pl.Path(os.environ["VALIDATION_CLIENT_INPUT_PATH"])
     client_output_path = pl.Path(os.environ["VALIDATION_CLIENT_OUTPUT_PATH"])
+    use_rst = os.environ["VALIDATION_CLIENT_RST"] in ["1"]
     dak_opt_path = client_input_path / "opt.dat"
 
     this_dir = pl.Path(__file__).parent
@@ -39,13 +42,21 @@ def main():
     dakota_uuid = handshaker.shake()
     logger.info(f"Handshake done, dakota service uuid: {dakota_uuid}")
 
+    if use_rst:
+        dakota_rst_path = this_dir / "dakota.rst"
+        shutil.copyfile(dakota_rst_path, client_output_path / "dakota.rst")
+        model_string = '"dummy_model"'
+    else:
+        model_string = '"model"'
+
     dakota_in_template_path = this_dir / "dakota.in.template"
 
-    dakota_in_template = dakota_in_template_path.read_text()
-
+    dakota_in_template = string.Template(dakota_in_template_path.read_text())
     dakota_in_path = client_output_path / "dakota.in"
 
-    dakota_in_path.write_text(dakota_in_template)
+    dakota_in_path.write_text(
+        dakota_in_template.substitute(model=model_string)
+    )
 
     while not os.path.exists(dak_opt_path):
         logger.info(f"Waiting for dak.opt at {dak_opt_path}")

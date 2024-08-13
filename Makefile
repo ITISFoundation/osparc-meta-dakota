@@ -5,7 +5,7 @@ SHELL = /bin/sh
 MAKEFLAGS += -j3
 
 export DOCKER_IMAGE_NAME ?= osparc-meta-dakota
-export DOCKER_IMAGE_TAG ?= 0.0.11
+export DOCKER_IMAGE_TAG ?= 0.1.0
 
 export MASTER_AWS_REGISTRY ?= registry.osparc-master-zmt.click
 export MASTER_REGISTRY ?= registry.osparc-master.speag.com
@@ -25,6 +25,7 @@ version-patch version-minor version-major: .bumpversion.cfg ## increases service
 	@make compose-spec
 	@$(call _bumpversion,$<,version-)
 	@make compose-spec
+	@git commit -a -m "Bump version"
 
 .PHONY: compose-spec
 compose-spec: ## runs ooil to assemble the docker-compose.yml file
@@ -55,14 +56,23 @@ run-mock-mapservice:
 
 run-validation-client:
 	pip install osparc-filecomms pandas
-	VALIDATION_CLIENT_INPUT_PATH=validation-tmp/outputs/output_0 VALIDATION_CLIENT_OUTPUT_PATH=validation-tmp/inputs/input_0 python validation-client/client.py
+	VALIDATION_CLIENT_INPUT_PATH=validation-tmp/outputs/output_0 VALIDATION_CLIENT_OUTPUT_PATH=validation-tmp/inputs/input_0 VALIDATION_CLIENT_RST=0 python validation-client/client.py
+
+run-validation-client-rst:
+	pip install osparc-filecomms pandas
+	VALIDATION_CLIENT_INPUT_PATH=validation-tmp/outputs/output_0 VALIDATION_CLIENT_OUTPUT_PATH=validation-tmp/inputs/input_0 VALIDATION_CLIENT_RST=1 python validation-client/client.py
 
 .PHONY: run-local-parallel
 run-local-parallel: run-compose-local run-mock-mapservice run-validation-client
 
+.PHONY: run-local-parallel-rst
+run-local-parallel-rst: run-compose-local run-mock-mapservice run-validation-client-rst
+
 .PHONY: run-local
 run-local: build
 	$(MAKE) run-local-parallel
+	$(MAKE) clean compose-spec
+	$(MAKE) run-local-parallel-rst
 	
 .PHONY: publish-local
 publish-local: run-local ## push to local throw away registry to test integration
