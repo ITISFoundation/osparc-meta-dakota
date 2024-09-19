@@ -31,6 +31,8 @@ NOISE_MUS = [0.0, 0.0]
 NOISE_SIGMAS = [5.0, 10.0]
 
 POLLING_TIME = 0.1
+RESTART_ON_ERROR_MAX_TIME = 10.0
+RESTART_ON_ERROR_POLLING_TIME = 1.0
 HTTP_PORT = 8888
 
 
@@ -104,7 +106,6 @@ class DakotaService:
 
         while not self.dakota_conf_path.exists():
             time.sleep(POLLING_TIME)
-        dakota_conf = self.dakota_conf_path.read_text()
 
         clear_directory(
             self.output0_dir_path,
@@ -117,7 +118,25 @@ class DakotaService:
             dirs_exist_ok=True,
         )
 
-        self.start_dakota(dakota_conf, self.output0_dir_path)
+        first_error_time = None
+
+        while True:
+            dakota_conf = self.dakota_conf_path.read_text()
+            try:
+                self.start_dakota(dakota_conf, self.output0_dir_path)
+                break
+            except RuntimeError as error:
+                if first_error_time is None:
+                    first_error_time = time.time()
+                if time.time() - first_error_time >= RESTART_ON_ERROR_MAX_TIME:
+                    logging.info("Received a RunTimeError from Dakota, " 
+                        "max retry time reached, raising error")
+                    raise error
+                else:
+                    logging.info("Received a RunTimeError from Dakota, "
+                        "retrying")
+                    time.sleep(RESTART_ON_ERROR_POLLING_TIME)
+                    continue
 
     def model_callback(self, dak_inputs):
         param_sets = [
