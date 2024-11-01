@@ -22,6 +22,12 @@ inputs:
     description:
      Map feedback channel
     type: data:*/*
+  input_2:
+    displayOrder: 0.0
+    label: Dakota service settings
+    description:
+     Dakota service settings file
+    type: data:*/*
 outputs:
   output_0:
     displayOrder: 0.0
@@ -32,6 +38,11 @@ outputs:
     displayOrder: 1.0
     label: Map commands
     description: Map command channel
+    type: data:*/*
+  conf_json_schema:
+    displayOrder: 2.0
+    label: JSON schema
+    description: JSON schema of configuration file
     type: data:*/*
 boot-options:
   boot_mode:

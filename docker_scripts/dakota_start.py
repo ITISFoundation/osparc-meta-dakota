@@ -1,12 +1,10 @@
 import contextlib
-import http.server
 import logging
+import multiprocessing
 import os
 import pathlib as pl
 import shutil
-import socketserver
 import sys
-import threading
 import time
 import uuid
 
@@ -24,55 +22,21 @@ print(
     f"{str(pl.Path(__file__).resolve().parent)}"
 )
 
-import tools.maps  # NOQA
-
-
-NOISE_MUS = [0.0, 0.0]
-NOISE_SIGMAS = [5.0, 10.0]
-
-POLLING_TIME = 0.1
-RESTART_ON_ERROR_MAX_TIME = 10.0
-RESTART_ON_ERROR_POLLING_TIME = 1.0
-HTTP_PORT = 8888
-
-
-def main():
-    dakota_service = DakotaService()
-
-    http_dir_path = pl.Path(__file__).parent / "http"
-
-    class HTTPHandler(http.server.SimpleHTTPRequestHandler):
-        def __init__(self, *args, **kwargs):
-            super().__init__(
-                *args, **kwargs, directory=http_dir_path.resolve()
-            )
-
-    try:
-        logger.info(
-            f"Starting http server at port {HTTP_PORT} and serving path {http_dir_path}"
-        )
-        with socketserver.TCPServer(("", HTTP_PORT), HTTPHandler) as httpd:
-            httpd_thread = threading.Thread(target=httpd.serve_forever)
-            httpd_thread.start()
-            dakota_service.start()
-            httpd.shutdown()
-    except Exception as err:  # pylint: disable=broad-except
-        logger.error(f"{err} . Stopping %s", exc_info=True)
+import map.maps  # NOQA
 
 
 class DakotaService:
-    def __init__(self):
+    def __init__(self, settings):
+        self.settings = settings
         self.uuid = uuid.uuid4()
         self.caller_uuid = None
         self.map_uuid = None
 
-        self.input_dir_path = pl.Path(os.environ["DY_SIDECAR_PATH_INPUTS"])
-        self.input0_dir_path = self.input_dir_path / "input_0"
-        self.input1_dir_path = self.input_dir_path / "input_1"
+        self.input0_dir_path = self.settings.input_path / "input_0"
+        self.input1_dir_path = self.settings.input_path / "input_1"
 
-        self.output_dir_path = pl.Path(os.environ["DY_SIDECAR_PATH_OUTPUTS"])
-        self.output0_dir_path = self.output_dir_path / "output_0"
-        self.output1_dir_path = self.output_dir_path / "output_1"
+        self.output0_dir_path = self.settings.output_path / "output_0"
+        self.output1_dir_path = self.settings.output_path / "output_1"
 
         self.dakota_conf_path = self.input0_dir_path / "dakota.in"
 
@@ -97,7 +61,7 @@ class DakotaService:
                 item.unlink()
 
     def start(self):
-        self.map_object = tools.maps.oSparcFileMap(
+        self.map_object = map.maps.oSparcFileMap(
             self.map_reply_file_path.resolve(),
             self.map_caller_file_path.resolve(),
         )
@@ -105,7 +69,8 @@ class DakotaService:
         self.caller_uuid = self.caller_handshaker.shake()
 
         while not self.dakota_conf_path.exists():
-            time.sleep(POLLING_TIME)
+            time.sleep(self.settings.file_polling_interval)
+        dakota_conf = self.dakota_conf_path.read_text()
 
         clear_directory(
             self.output0_dir_path,
@@ -121,22 +86,59 @@ class DakotaService:
         first_error_time = None
 
         while True:
-            dakota_conf = self.dakota_conf_path.read_text()
             try:
-                self.start_dakota(dakota_conf, self.output0_dir_path)
+                process = multiprocessing.Process(
+                    target=self.start_dakota,
+                    args=(dakota_conf, self.output0_dir_path),
+                )
+                process.start()
+                process.join()
+                logging.info(f"PROCESS ended with exitcode {process.exitcode}")
+                if process.exitcode != 0:
+                    raise RuntimeError("Dakota subprocess failed")
                 break
             except RuntimeError as error:
+                if not self.settings.restart_on_error:
+                    raise error
                 if first_error_time is None:
                     first_error_time = time.time()
-                if time.time() - first_error_time >= RESTART_ON_ERROR_MAX_TIME:
-                    logging.info("Received a RunTimeError from Dakota, " 
-                        "max retry time reached, raising error")
+                if (
+                    time.time() - first_error_time
+                    >= self.settings.restart_on_error_max_time
+                ):
+                    logging.info(
+                        "Received a RunTimeError from Dakota, "
+                        "max retry time reached, raising error"
+                    )
                     raise error
                 else:
-                    logging.info("Received a RunTimeError from Dakota, "
-                        "retrying")
-                    time.sleep(RESTART_ON_ERROR_POLLING_TIME)
+                    logging.info(
+                        f"Received a RunTimeError from Dakota ({error}), "
+                        "retrying ..."
+                    )
+                    time.sleep(self.settings.restart_on_error_polling_interval)
+                    max_wait_time = self.settings.restart_on_error_max_time - (
+                        time.time() - first_error_time
+                    )
+                    logging.info(
+                        f"Will wait for a maximum of {max_wait_time} "
+                        "seconds for a change in dakota conf file..."
+                    )
+                    dakota_conf = self.wait_for_dakota_conf_change(
+                        dakota_conf, max_wait_time
+                    )
+                    logging.info("Change in dakota conf file detected")
                     continue
+
+    def wait_for_dakota_conf_change(self, old_dakota_conf, max_wait_time):
+        new_dakota_conf = None
+        start_time = time.time()
+        while new_dakota_conf is None or new_dakota_conf == old_dakota_conf:
+            if time.time() - start_time > max_wait_time:
+                raise TimeoutError("Waiting too long for new dakota.conf")
+            new_dakota_conf = self.dakota_conf_path.read_text()
+            time.sleep(self.settings.file_polling_interval)
+        return new_dakota_conf
 
     def model_callback(self, dak_inputs):
         param_sets = [
@@ -203,7 +205,3 @@ def clear_directory(path):
             os.unlink(item_path)
         elif os.path.isdir(item_path):
             shutil.rmtree(item_path)
-
-
-if __name__ == "__main__":
-    main()
