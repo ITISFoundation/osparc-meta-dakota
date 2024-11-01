@@ -1,0 +1,5 @@
+itis-dakota
+osparc-filecomms
+pydantic
+pydantic-settings==2.5.2
+watchdog

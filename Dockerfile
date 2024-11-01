@@ -19,10 +19,10 @@ RUN pip3 install itis-dakota osparc_filecomms --upgrade
 USER osparcuser
 
 WORKDIR /home/osparcuser
+RUN python3 -m venv venv
+RUN . ./venv/bin/activate && pip3 install --upgrade -r /docker/requirements.txt
 
 USER root
-
 EXPOSE 8888
 
 ENTRYPOINT [ "/bin/bash", "-c", "/docker/entrypoint.bash" ]
-CMD [ "/bin/bash", "-c", "/docker/runner.bash "]

@@ -54,8 +54,15 @@ def main():
     dakota_in_template = string.Template(dakota_in_template_path.read_text())
     dakota_in_path = client_output_path / "dakota.in"
 
+    dakota_in = dakota_in_template.substitute(model=model_string)
+    dakota_in2 = dakota_in_template.substitute(model=model_string)
+
     dakota_in_path.write_text(
-        dakota_in_template.substitute(model=model_string)
+        dakota_in.replace("environment", "wrong")
+    )
+    time.sleep(5)
+    dakota_in_path.write_text(
+        dakota_in2
     )
 
     while not os.path.exists(dak_opt_path):

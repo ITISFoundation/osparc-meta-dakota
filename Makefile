@@ -5,7 +5,7 @@ SHELL = /bin/sh
 MAKEFLAGS += -j3
 
 export DOCKER_IMAGE_NAME ?= osparc-meta-dakota
-export DOCKER_IMAGE_TAG ?= 0.1.0
+export DOCKER_IMAGE_TAG ?= 0.2.1
 
 export MASTER_AWS_REGISTRY ?= registry.osparc-master-zmt.click
 export MASTER_REGISTRY ?= registry.osparc-master.speag.com
@@ -16,7 +16,7 @@ define _bumpversion
 	# upgrades as $(subst $(1),,$@) version, commits and tags
 	@docker run -it --rm -v $(PWD):/${DOCKER_IMAGE_NAME} \
 		-u $(shell id -u):$(shell id -g) \
-		itisfoundation/ci-service-integration-library:v1.0.1-dev-33 \
+		itisfoundation/ci-service-integration-library:latest \
 		sh -c "cd /${DOCKER_IMAGE_NAME} && bump2version --verbose --list --config-file $(1) $(subst $(2),,$@)"
 endef
 
@@ -31,7 +31,7 @@ version-patch version-minor version-major: .bumpversion.cfg ## increases service
 compose-spec: ## runs ooil to assemble the docker-compose.yml file
 	@docker run --rm -v $(PWD):/${DOCKER_IMAGE_NAME} \
 		-u $(shell id -u):$(shell id -g) \
-		itisfoundation/ci-service-integration-library:v1.0.4 \
+		itisfoundation/ci-service-integration-library:latest \
 		sh -c "cd /${DOCKER_IMAGE_NAME} && ooil compose"
 
 clean: clean-validation
@@ -39,12 +39,13 @@ clean: clean-validation
 
 .PHONY: build
 build: clean compose-spec	## build docker image
+	chmod -R 755 docker_scripts
 	docker compose build
 
 clean-validation:
 	rm -rf validation-tmp
 	cp -r validation validation-tmp
-	chmod -R 770 validation-tmp
+	chmod -R 775 validation-tmp
 
 run-compose-local:
 	docker compose down
@@ -52,6 +53,7 @@ run-compose-local:
 
 run-mock-mapservice:
 	pip install osparc-filecomms
+	sleep 5
 	MOCK_MAP_INPUT_PATH=validation-tmp/outputs/output_1 MOCK_MAP_OUTPUT_PATH=validation-tmp/inputs/input_1 python validation-client/mock_mapservice.py
 
 run-validation-client:
