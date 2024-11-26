@@ -3,9 +3,9 @@ import logging
 
 import pydantic as pyda
 import pydantic_settings
+from osparc_filecomms import tools
 
 import dakota_start
-import tools
 
 logging.basicConfig(
     level=logging.INFO, format="[%(filename)s:%(lineno)d] %(message)s"
@@ -16,7 +16,7 @@ INPUT_CONF_KEY = "input_2"
 CONF_SCHEMA_KEY = "conf_json_schema"
 
 DEFAULT_FILE_POLLING_INTERVAL = 0.1
-RESTART_ON_ERROR_MAX_TIME = 10.0
+RESTART_ON_ERROR_MAX_TIME = 3600.0
 RESTART_ON_ERROR_POLLING_INTERVAL = 1.0
 
 
@@ -35,6 +35,7 @@ def main():
     # Create and start the dakota service
     dakservice = dakota_start.DakotaService(settings)
     dakservice.start()
+
 
 class DakotaDynamicSettings:
     def __init__(self):
@@ -80,9 +81,7 @@ class DakotaDynamicSettings:
         output_path: pyda.DirectoryPath = pyda.Field(
             alias="DY_SIDECAR_PATH_OUTPUTS"
         )
-        restart_on_error: bool = pyda.Field(
-            default=False
-        )
+        restart_on_error: bool = pyda.Field(default=False)
         restart_on_error_max_time: float = pyda.Field(
             default=RESTART_ON_ERROR_MAX_TIME, ge=0
         )
