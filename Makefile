@@ -72,7 +72,7 @@ run-local-parallel: run-compose-local run-mock-mapservice run-validation-client
 run-local-parallel-rst: run-compose-local run-mock-mapservice run-validation-client-rst
 
 .PHONY: run-local
-run-local: build
+run-local:
 	$(MAKE) run-local-parallel
 	$(MAKE) clean compose-spec
 	$(MAKE) run-local-parallel-rst
