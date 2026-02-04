@@ -31,3 +31,5 @@ jobs:
         uses: docker://itisfoundation/ci-service-integration-library:v2.2.1
         with:
           args: docker compose build
+      - name: Make run-local
+        run: make run-local
