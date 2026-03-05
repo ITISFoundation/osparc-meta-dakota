@@ -30,7 +30,7 @@ version-patch version-minor version-major: .bumpversion.cfg ## increases service
 
 .PHONY: compose-spec
 compose-spec: ## runs ooil to assemble the docker-compose.yml file
-	@docker run -it --rm -v $(PWD):/${DOCKER_IMAGE_NAME} \
+	@docker run --rm -v $(PWD):/${DOCKER_IMAGE_NAME} \
 		-u $(shell id -u):$(shell id -g) \
 		itisfoundation/ci-service-integration-library:v2.2.1 \
 		sh -c "cd /${DOCKER_IMAGE_NAME} && ooil compose"
@@ -74,7 +74,7 @@ run-local-parallel: run-compose-local run-mock-mapservice run-validation-client
 run-local-parallel-rst: run-compose-local run-mock-mapservice run-validation-client-rst
 
 .PHONY: run-local
-run-local:
+run-local: build
 	$(MAKE) run-local-parallel
 	$(MAKE) clean compose-spec
 	$(MAKE) run-local-parallel-rst
